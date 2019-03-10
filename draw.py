@@ -3,15 +3,52 @@ from matrix import *
 
 
 def add_circle( points, cx, cy, cz, r, step ):
-    pass
+    theta = 2*math.pi/step
+    theta1 = float(0)
+    while theta1 < 10.0:
+        cos0 = cx + r*math.cos(theta1)
+        sin0 = cy + r*math.sin(theta1)
+        theta1 += theta
+        cos1 = cx + r*math.cos(theta1)
+        sin1 = cy + r*math.sin(theta1)
+        add_edge(points, cos0, sin0, cz, cos1, sin1, cz)
 
 def add_curve( points, x0, y0, x1, y1, x2, y2, x3, y3, step, curve_type ):
-    pass
+    def cubic(t , c):
+        return c[0] * math.pow(t,3) + c[1] * math.pow(t,2) + c[2] * math.pow(t,1) + c[3]
+
+    if curve_type == 'hermite':
+        rx0 = x2
+        ry0 = y2
+        rx1 = x3
+        ry1 = y3
+        Cx, Cy = make_hermite(x0,y0,x1,y1, rx0, ry0, rx1, ry1)
+        dt = float(1/step)
+        t = float(0)
+        while t < 1.0:
+            x = cubic(t, Cx)
+            y = cubic(t, Cy)
+            t += dt
+            x0 = cubic(t, Cx)
+            y0 = cubic(t, Cy)
+            add_edge(points, x, y, 0,x0, y0 ,0)
+    elif curve_type == 'bezier':
+        Cx1, Cy1 = make_bezier(x0, y0, x1, y1, x2, y2, x3, y3)
+        dt = float(1/step)
+        t = float(0)
+        while t < 1.0:
+            x = cubic(t, Cx1)
+            y = cubic(t, Cy1)
+            t += dt
+            x0 = cubic(t, Cx1)
+            y0 = cubic(t, Cy1)
+            add_edge(points, x, y, 0,x0, y0 ,0)
+
 
 
 def draw_lines( matrix, screen, color ):
     if len(matrix) < 2:
-        print 'Need at least 2 points to draw'
+        print ('Need at least 2 points to draw')
         return
 
     point = 0
@@ -20,16 +57,16 @@ def draw_lines( matrix, screen, color ):
                    int(matrix[point][1]),
                    int(matrix[point+1][0]),
                    int(matrix[point+1][1]),
-                   screen, color)    
+                   screen, color)
         point+= 2
-        
+
 def add_edge( matrix, x0, y0, z0, x1, y1, z1 ):
     add_point(matrix, x0, y0, z0)
     add_point(matrix, x1, y1, z1)
-    
+
 def add_point( matrix, x, y, z=0 ):
     matrix.append( [x, y, z, 1] )
-    
+
 
 
 
@@ -53,7 +90,7 @@ def draw_line( x0, y0, x1, y1, screen, color ):
     if ( abs(x1-x0) >= abs(y1 - y0) ):
 
         #octant 1
-        if A > 0:            
+        if A > 0:
             d = A + B/2
 
             while x < x1:
